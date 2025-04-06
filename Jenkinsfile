@@ -7,7 +7,7 @@ pipeline {
     }
     
     environment {
-        GIT_REPO = 'https://github.com/Yajanth/couponservice'
+        GIT_REPO = 'https://github.com/Yajanth/couponservice_CICD'
         GIT_CREDENTIALS_ID = 'Yajanth'  // Replace with your Jenkins credentials ID
         DOCKER_HUB_USER = 'yajanthrr'
         APP_IMAGE = 'couponservice'
@@ -55,39 +55,6 @@ pipeline {
         //     }
         // }
         
-        stage('Build and Push Docker Images') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS')]) {
-                        echo "Logging into Docker Hub..."
-                        sh "echo '${DOCKER_HUB_PASS}' | docker login -u '${DOCKER_HUB_USER}' --password-stdin"
-                        
-                        echo 'Building Docker image for the application...'
-                        sh "docker build --no-cache -t ${DOCKER_HUB_USER}/${APP_IMAGE}:latest ."
 
-                        echo 'Pushing application image to Docker Hub...'
-                        sh "docker push ${DOCKER_HUB_USER}/${APP_IMAGE}:latest"
-                    }
-                }
-            }
-        }
-
-        stage('Deploy with Docker Compose') {
-            steps {
-                script {
-                    echo 'Stopping existing containers...'
-                    sh 'docker compose down -v'
-
-                    echo 'Pulling latest images...'
-                    sh "docker pull ${DOCKER_HUB_USER}/${APP_IMAGE}:v1"
-
-                    echo 'Starting new deployment...'
-                    sh 'docker compose up -d'
-                    
-                    echo 'Showing docker-compose logs...'
-                    sh 'docker compose logs'
-                }
-            }
-        }
     }
 }
