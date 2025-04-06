@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coupon_Service
+    image: yajanthrr/couponservice:v1
+    environment:
+      - SPRING_PROFILES_ACTIVE = docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/servicedb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root@123
+    ports:
+      - "9095:9095"
+    restart: on-failure
+    depends_on:
+      - db
+    networks:
+      - springboot-network
+
+  db:
+    image: yajanthrr/coupondb:v1 
+    container_name: coupon_database
+    environment:
+      - MYSQL_ROOT_PASSWORD=root@123
+      - MYSQL_DATABASE=servicedb
+    restart: always
+    ports:
+      - "3307:3306"  # Host port mapped to container's MySQL port for external access
+    networks:
+      - springboot-network
+
+networks:
+  springboot-network:
+    driver: bridge
