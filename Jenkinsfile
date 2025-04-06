@@ -76,9 +76,8 @@ stage('SonarQube Analysis') {
         stage('Deploy with Docker Compose') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials', 
-                                   usernameVariable: 'DOCKER_HUB_USER', 
-                                   passwordVariable: 'DOCKER_HUB_PASS')])
+                    withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS')]) {
+
                     echo 'Stopping existing containers...'
                     bat 'docker compose down -v'
 
