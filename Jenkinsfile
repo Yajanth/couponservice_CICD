@@ -11,7 +11,7 @@ pipeline {
         GIT_CREDENTIALS_ID = 'Yajanth'  // Replace with your Jenkins credentials ID
         APP_IMAGE = 'couponservice'
         DB_IMAGE = 'coupondb'  
-        DOCKER_HUB_USER = ''  // Define empty variables for better scope
+        DOCKER_HUB_USER = 'yajanthrr'  
         DOCKER_HUB_PASS = ''
     }
 
@@ -76,8 +76,6 @@ stage('SonarQube Analysis') {
         stage('Deploy with Docker Compose') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS')]) {
-
                     echo 'Stopping existing containers...'
                     bat 'docker compose down -v'
 
