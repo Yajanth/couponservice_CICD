@@ -35,7 +35,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Running Maven clean install...'
-                sh 'mvn clean install -DskipTests'  // Linux-compatible command
+                bat 'mvn clean install -DskipTests'  // Linux-compatible command
             }
         }
         
@@ -60,13 +60,13 @@ stage('SonarQube Analysis') {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS')]) {
                         echo "Logging into Docker Hub..."
-                        sh "echo '${DOCKER_HUB_PASS}' | docker login -u '${DOCKER_HUB_USER}' --password-stdin"
+                        bat "echo '${DOCKER_HUB_PASS}' | docker login -u '${DOCKER_HUB_USER}' --password-stdin"
                         
                         echo 'Building Docker image for the application...'
-                        sh "docker build --no-cache -t ${DOCKER_HUB_USER}/${APP_IMAGE}:latest ."
+                        bat "docker build --no-cache -t ${DOCKER_HUB_USER}/${APP_IMAGE}:latest ."
 
                         echo 'Pushing application image to Docker Hub...'
-                        sh "docker push ${DOCKER_HUB_USER}/${APP_IMAGE}:latest"
+                        bat "docker push ${DOCKER_HUB_USER}/${APP_IMAGE}:latest"
                     }
                 }
             }
@@ -76,16 +76,16 @@ stage('SonarQube Analysis') {
             steps {
                 script {
                     echo 'Stopping existing containers...'
-                    sh 'docker compose down -v'
+                    bat 'docker compose down -v'
 
                     echo 'Pulling latest images...'
-                    sh "docker pull ${DOCKER_HUB_USER}/${APP_IMAGE}:v1"
+                    bat "docker pull ${DOCKER_HUB_USER}/${APP_IMAGE}:v1"
 
                     echo 'Starting new deployment...'
-                    sh 'docker compose up -d'
+                    bat 'docker compose up -d'
                     
                     echo 'Showing docker-compose logs...'
-                    sh 'docker compose logs'
+                    bat 'docker compose logs'
                 }
             }
         }
