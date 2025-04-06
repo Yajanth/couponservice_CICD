@@ -31,15 +31,6 @@ pipeline {
                     ])
                 }
             }
-            post {
-                success {
-                    echo 'Checkout successful!'
-                }
-                failure {
-                    echo 'Checkout failed!'
-                    currentBuild.result = 'FAILURE'
-                }
-            }
         }
         
         stage('Build') {
@@ -47,48 +38,21 @@ pipeline {
                 echo 'Running Maven clean install...'
                 bat 'mvn clean install -DskipTests'  // Linux-compatible command
             }
-            post {
-                success {
-                    echo 'Build successful!'
-                }
-                failure {
-                    echo 'Build failed!'
-                    currentBuild.result = 'FAILURE'
-                }
-            }
         }
         
         stage('Archive Artifact') {
             steps {
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
-            post {
-                success {
-                    echo 'Artifact archived successfully!'
-                }
-                failure {
-                    echo 'Artifact archiving failed!'
-                    currentBuild.result = 'FAILURE'
-                }
-            }
         }
         
-        stage('SonarQube Analysis') {
+stage('SonarQube Analysis') {
             environment {
                 SONAR_HOST_URL = "http://localhost:9000"
                 SONAR_AUTH_TOKEN = credentials('sonar_token_coupon')
             }
             steps {
                 bat "mvn sonar:sonar -Dsonar.projectKey=CouponService_analysis -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_AUTH_TOKEN"
-            }
-            post {
-                success {
-                    echo 'SonarQube analysis completed successfully!'
-                }
-                failure {
-                    echo 'SonarQube analysis failed!'
-                    currentBuild.result = 'FAILURE'
-                }
             }
         }
         
@@ -105,15 +69,6 @@ pipeline {
                         echo 'Pushing application image to Docker Hub...'
                         bat "docker push $DOCKER_HUB_USER/$APP_IMAGE:latest"
                     }
-                }
-            }
-            post {
-                success {
-                    echo 'Docker image built and pushed successfully!'
-                }
-                failure {
-                    echo 'Docker image build/push failed!'
-                    currentBuild.result = 'FAILURE'
                 }
             }
         }
@@ -134,27 +89,6 @@ pipeline {
                     bat 'docker compose logs'
                 }
             }
-            post {
-                success {
-                    echo 'Deployment successful!'
-                }
-                failure {
-                    echo 'Deployment failed!'
-                    currentBuild.result = 'FAILURE'
-                }
-            }
-        }
-    }
-    
-    post {
-        always {
-            echo 'Pipeline execution completed.'
-        }
-        success {
-            echo 'Pipeline executed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed. Please check the logs for details.'
         }
     }
 }
