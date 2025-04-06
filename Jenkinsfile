@@ -51,7 +51,7 @@ pipeline {
                 SONAR_AUTH_TOKEN = credentials('sonar_token_coupon')
             }
             steps {
-                bat "mvn sonar:sonar -Dsonar.projectKey=InterestCalculatorPipeline -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_AUTH_TOKEN"
+                bat "mvn sonar:sonar -Dsonar.projectKey=CouponService_analysis -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_AUTH_TOKEN"
             }
         }
         
