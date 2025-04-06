@@ -57,7 +57,7 @@ stage('SonarQube Analysis') {
         stage('Build and Push Docker Images') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'git ', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS')]) {
                         echo "Logging into Docker Hub..."
                         bat "echo '${DOCKER_HUB_PASS}' | docker -D login  -u '${DOCKER_HUB_USER}' --password-stdin"
                         
