@@ -70,7 +70,7 @@ pipeline {
         stage('SonarQube Analysis') {
             environment {
                 SONAR_HOST_URL = "http://localhost:9000"
-                SONAR_AUTH_TOKEN = credentials('SonarToken')
+                SONAR_AUTH_TOKEN = credentials('sonar_token_coupon')
             }
             steps {
                 bat """
