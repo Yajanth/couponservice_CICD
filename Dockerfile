@@ -7,7 +7,6 @@ WORKDIR /app
 # Install curl using apt-get
 RUN apt-get update && apt-get install -y curl
 
-# Define the URLs to fetch the JAR from Jenkins
 # Replace <host-ip> with the actual IP of your host machine
 ARG JOB_URL="http://192.168.1.25:8080/job/Coupon-Service-Automation"
 
