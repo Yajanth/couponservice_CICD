@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        GIT_REPO = 'https://github.com/Yajanth/couponservice'
+        GIT_REPO = 'https://github.com/Yajanth/couponservice_CICD'
         GIT_CREDENTIALS_ID = 'Yajanth'
         DOCKER_HUB_USER = 'yajanthrr'
         APP_IMAGE = 'couponservice'
