@@ -1,18 +1,17 @@
 pipeline {
     agent any
-    
+
     tools {
-        maven 'maven'  // Ensure Maven is installed in Jenkins
+        maven 'maven'
         jdk 'JDK17'
     }
-    
+
     environment {
         GIT_REPO = 'https://github.com/Yajanth/couponservice'
-        GIT_CREDENTIALS_ID = 'Yajanth'  // Replace with your Jenkins credentials ID
+        GIT_CREDENTIALS_ID = 'Yajanth'
+        DOCKER_HUB_USER = 'yajanthrr'
         APP_IMAGE = 'couponservice'
-        DB_IMAGE = 'coupondb'  
-        DOCKER_HUB_USER = 'yajanthrr'  // Define empty variables for better scope
-        DOCKER_HUB_PASS = ''
+        DB_IMAGE = 'coupondb'
     }
 
     stages {
@@ -21,11 +20,11 @@ pipeline {
                 script {
                     checkout([
                         $class: 'GitSCM',
-                        branches: [[name: '*/main']],  // Checkout the 'main' branch
+                        branches: [[name: '*/main']],
                         userRemoteConfigs: [
                             [
-                                url: "${GIT_REPO}",  // Git repository URL
-                                credentialsId: "git_credentials"  // Jenkins credentials ID
+                                url: "${GIT_REPO}",
+                                credentialsId: "git_credentials"
                             ]
                         ]
                     ])
@@ -33,97 +32,86 @@ pipeline {
             }
             post {
                 success {
-                    echo 'Checkout successful!'
+                    echo '✅ Checkout completed successfully.'
                 }
                 failure {
-                    script {
-                        echo 'Checkout failed!'
-                        currentBuild.result = 'FAILURE'
-                    }
+                    echo '❌ Checkout failed.'
                 }
             }
         }
-        
+
         stage('Build') {
             steps {
                 echo 'Running Maven clean install...'
-                bat 'mvn clean install -DskipTests'  // Linux-compatible command
+                sh 'mvn clean install -DskipTests'
             }
             post {
                 success {
-                    echo 'Build successful!'
+                    echo '✅ Build completed successfully.'
                 }
                 failure {
-                    script {
-                        echo 'Build failed!'
-                        currentBuild.result = 'FAILURE'
-                    }
+                    echo '❌ Build failed.'
                 }
             }
         }
-        
+
         stage('Archive Artifact') {
             steps {
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
             post {
                 success {
-                    echo 'Artifact archived successfully!'
+                    echo '✅ Artifacts archived successfully.'
                 }
                 failure {
-                    script {
-                        echo 'Artifact archiving failed!'
-                        currentBuild.result = 'FAILURE'
-                    }
+                    echo '❌ Failed to archive artifacts.'
                 }
             }
         }
-        
+
         stage('SonarQube Analysis') {
             environment {
                 SONAR_HOST_URL = "http://localhost:9000"
-                SONAR_AUTH_TOKEN = credentials('sonar_token_coupon')
+                SONAR_AUTH_TOKEN = credentials('SonarToken')
             }
             steps {
-                bat "mvn sonar:sonar -Dsonar.projectKey=CouponService_analysis -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_AUTH_TOKEN"
+                sh "mvn sonar:sonar -Dsonar.projectKey=Coupon_service_analysis 
+                -Dsonar.host.url=$SONAR_HOST_URL 
+                -Dsonar.login=$SONAR_AUTH_TOKEN 
+                -Dsonar.jacoco.reportPaths=target/jacoco.xml"
             }
             post {
                 success {
-                    echo 'SonarQube analysis completed successfully!'
+                    echo '✅ SonarQube analysis completed.'
                 }
                 failure {
-                    script {
-                        echo 'SonarQube analysis failed!'
-                        currentBuild.result = 'FAILURE'
-                    }
+                    echo '❌ SonarQube analysis failed.'
                 }
             }
         }
-        
+
         stage('Build and Push Docker Images') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials', usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials',
+                     usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS')]) {
                         echo "Logging into Docker Hub..."
-                        bat "echo $DOCKER_HUB_PASS | docker -D login -u $DOCKER_HUB_USER --password-stdin"
-                        
+                        sh "echo '${DOCKER_HUB_PASS}' | docker login -u '${DOCKER_HUB_USER}' --password-stdin"
+
                         echo 'Building Docker image for the application...'
-                        bat "docker build --no-cache -t $DOCKER_HUB_USER/$APP_IMAGE:latest ."
+                        sh "docker build --no-cache -t ${DOCKER_HUB_USER}/${APP_IMAGE}:latest ."
 
                         echo 'Pushing application image to Docker Hub...'
-                        bat "docker push $DOCKER_HUB_USER/$APP_IMAGE:latest"
+                        sh "docker push ${DOCKER_HUB_USER}/${APP_IMAGE}:latest"
                     }
                 }
             }
             post {
                 success {
-                    echo 'Docker image built and pushed successfully!'
+                    echo '✅ Docker image built and pushed successfully.'
                 }
                 failure {
-                    script {
-                        echo 'Docker image build/push failed!'
-                        currentBuild.result = 'FAILURE'
-                    }
+                    echo '❌ Failed to build/push Docker image.'
                 }
             }
         }
@@ -132,41 +120,39 @@ pipeline {
             steps {
                 script {
                     echo 'Stopping existing containers...'
-                    bat 'docker compose down -v'
+                    sh 'docker compose down -v'
 
                     echo 'Pulling latest images...'
-                    bat "docker pull $DOCKER_HUB_USER/$APP_IMAGE:v1"
+                    sh "docker pull ${DOCKER_HUB_USER}/${APP_IMAGE}:v1"
 
                     echo 'Starting new deployment...'
-                    bat 'docker compose up -d'
-                    
+                    sh 'docker compose up -d'
+
                     echo 'Showing docker-compose logs...'
-                    bat 'docker compose logs'
+                    sh 'docker compose logs'
                 }
             }
             post {
                 success {
-                    echo 'Deployment successful!'
+                    echo '✅ Deployment successful.'
                 }
                 failure {
-                    script {
-                        echo 'Deployment failed!'
-                        currentBuild.result = 'FAILURE'
-                    }
+                    echo '❌ Deployment failed.'
                 }
             }
         }
     }
-    
+
     post {
-        always {
-            echo 'Pipeline execution completed.'
-        }
         success {
-            echo 'Pipeline executed successfully!'
+            echo '🎉 Pipeline completed successfully.'
         }
         failure {
-            echo 'Pipeline failed. Please check the logs for details.'
+            echo '🚨 Pipeline execution failed.'
+        }
+        always {
+            echo '🧹 Cleaning up workspace...'
+            cleanWs()
         }
     }
 }
