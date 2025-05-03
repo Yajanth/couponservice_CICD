@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-    label 'linux-agent'
-}
+    agent any
 
     tools {
         maven 'maven'
@@ -23,12 +21,10 @@ pipeline {
                     checkout([
                         $class: 'GitSCM',
                         branches: [[name: '*/main']],
-                        userRemoteConfigs: [
-                            [
-                                url: "${GIT_REPO}",
-                                credentialsId: "git_credentials"
-                            ]
-                        ]
+                        userRemoteConfigs: [[
+                            url: "${GIT_REPO}",
+                            credentialsId: "${GIT_CREDENTIALS_ID}"
+                        ]]
                     ])
                 }
             }
@@ -45,7 +41,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Running Maven clean install...'
-                sh 'mvn clean install -DskipTests'
+                bat 'mvn clean install -DskipTests'
             }
             post {
                 success {
@@ -59,7 +55,7 @@ pipeline {
 
         stage('Archive Artifact') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'target\\*.jar', fingerprint: true
             }
             post {
                 success {
@@ -77,11 +73,13 @@ pipeline {
                 SONAR_AUTH_TOKEN = credentials('SonarToken')
             }
             steps {
-                sh ''' mvn sonar:sonar -Dsonar.projectKey=Coupon_service_analysis
-                -Dsonar.host.url=$SONAR_HOST_URL 
-                -Dsonar.login=$SONAR_AUTH_TOKEN 
-                -Dsonar.jacoco.reportPaths=target/jacoco.xml '''
-
+                bat """
+                mvn sonar:sonar ^
+                -Dsonar.projectKey=Coupon_service_analysis ^
+                -Dsonar.host.url=%SONAR_HOST_URL% ^
+                -Dsonar.login=%SONAR_AUTH_TOKEN% ^
+                -Dsonar.jacoco.reportPaths=target\\jacoco.xml
+                """
             }
             post {
                 success {
@@ -96,16 +94,19 @@ pipeline {
         stage('Build and Push Docker Images') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials',
-                     usernameVariable: 'DOCKER_HUB_USER', passwordVariable: 'DOCKER_HUB_PASS')]) {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'docker_hub_credentials',
+                        usernameVariable: 'DOCKER_HUB_USER',
+                        passwordVariable: 'DOCKER_HUB_PASS')]) {
+
                         echo "Logging into Docker Hub..."
-                        sh "echo '${DOCKER_HUB_PASS}' | docker login -u '${DOCKER_HUB_USER}' --password-stdin"
+                        bat "echo %DOCKER_HUB_PASS% | docker login -u %DOCKER_HUB_USER% --password-stdin"
 
                         echo 'Building Docker image for the application...'
-                        sh "docker build --no-cache -t ${DOCKER_HUB_USER}/${APP_IMAGE}:latest ."
+                        bat "docker build --no-cache -t %DOCKER_HUB_USER%/%APP_IMAGE%:latest ."
 
                         echo 'Pushing application image to Docker Hub...'
-                        sh "docker push ${DOCKER_HUB_USER}/${APP_IMAGE}:latest"
+                        bat "docker push %DOCKER_HUB_USER%/%APP_IMAGE%:latest"
                     }
                 }
             }
@@ -123,16 +124,16 @@ pipeline {
             steps {
                 script {
                     echo 'Stopping existing containers...'
-                    sh 'docker compose down -v'
+                    bat 'docker compose down -v'
 
                     echo 'Pulling latest images...'
-                    sh "docker pull ${DOCKER_HUB_USER}/${APP_IMAGE}:v1"
+                    bat "docker pull %DOCKER_HUB_USER%/%APP_IMAGE%:v1"
 
                     echo 'Starting new deployment...'
-                    sh 'docker compose up -d'
+                    bat 'docker compose up -d'
 
                     echo 'Showing docker-compose logs...'
-                    sh 'docker compose logs'
+                    bat 'docker compose logs'
                 }
             }
             post {
