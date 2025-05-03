@@ -77,7 +77,7 @@ pipeline {
                 SONAR_AUTH_TOKEN = credentials('SonarToken')
             }
             steps {
-                sh " mvn sonar:sonar -Dsonar.projectKey="Coupon_service_analysis" 
+                sh " mvn sonar:sonar -Dsonar.projectKey=Coupon_service_analysis
                 -Dsonar.host.url=$SONAR_HOST_URL 
                 -Dsonar.login=$SONAR_AUTH_TOKEN 
                 -Dsonar.jacoco.reportPaths=target/jacoco.xml "
